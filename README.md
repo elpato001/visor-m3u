@@ -6,8 +6,6 @@ Un visor web moderno y ligero para cargar, visualizar, buscar y gestionar tus li
 
 > **Nota:** Este proyecto está diseñado para usarse con listas M3U personales y con fines educativos.
 
-![Captura de pantalla de la aplicación](https://raw.githubusercontent.com/davidglezz/img-host/main/20240520202931.png)
-*(Reemplaza la URL de la imagen de arriba con una captura de pantalla de tu propia aplicación para que se vea genial)*
 
 ---
 
