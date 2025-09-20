@@ -45,14 +45,14 @@ Para ejecutar este proyecto en tu entorno local, necesitarás un servidor web qu
 
 ### Pasos de Instalación
 
-1.  **Clonar el repositorio:**
-    ```bash
-    git clone [https://github.com/](https://github.com/)[TU_USUARIO]/[NOMBRE_DEL_REPOSITORIO].git
-    ```
-    *(Reemplaza la URL con la de tu propio repositorio)*
+1.  **Descargar el proyecto:**
+    * Ve a la página principal de este repositorio en GitHub.
+    * Haz clic en el botón verde **<> Code**.
+    * En el menú que aparece, selecciona **Download ZIP**.
+    * Descomprime el archivo `.zip` en la ubicación que prefieras de tu ordenador.
 
 2.  **Mover los archivos:**
-    * Copia todos los archivos del proyecto en el directorio raíz de tu servidor web (por ejemplo, `C:/xampp/htdocs/visor-m3u`).
+    * Copia la carpeta descomprimida (que contiene todos los archivos del proyecto) en el directorio raíz de tu servidor web (por ejemplo, `C:/xampp/htdocs/visor-m3u`).
 
 3.  **Acceder a la aplicación:**
     * Inicia tu servidor Apache.
@@ -86,8 +86,5 @@ Este proyecto está distribuido bajo la Licencia MIT. Consulta el archivo `LICEN
 
 ---
 
-## 📧 Contacto
-
-Creado por [Tu Nombre] - [tu_email@ejemplo.com]
 
 ¡Siéntete libre de contribuir al proyecto!
