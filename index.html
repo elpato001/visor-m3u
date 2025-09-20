@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Listas M3U</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="player-modal-overlay" id="player-modal">
+    <div class="player-modal-content">
+        <div class="player-modal-header">
+            <h3 id="player-title">Reproduciendo...</h3>
+            <button id="player-close-btn">&times;</button>
+        </div>
+        <video id="video-player" controls autoplay></video>
+    </div>
+</div>
+
+
+<div class="container">
+    <nav>
+        <ul>
+            <li><a href="index.html" class="active">Visor Principal</a></li>
+            <li><a href="generador.php">Generador de URL</a></li>
+            <li id="favorites-nav-item" style="display: none;"><a id="favorites-nav-btn">★ Favoritos</a></li>
+        </ul>
+        <button id="theme-toggle" title="Cambiar tema">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+    </nav>
+
+    <div id="main-content">
+        <h1>Visor de Listas M3U 📺</h1>
+        <div id="main-view">
+            <p>Sube tu archivo M3U para ver, agrupar, buscar y descargar contenido.</p>
+            <div class="form-container">
+                <label for="m3u_file" class="button button-primary">Seleccionar archivo M3U</label>
+                <input type="file" id="m3u_file" style="display:none;">
+                <span id="file-name"></span>
+                <button id="load-button" class="button button-success" style="display:none;">Cargar Lista</button>
+            </div>
+        </div>
+        
+        <div id="search-container" style="display:none; margin-top:20px;">
+            <input type="text" id="search-input" placeholder="Buscar películas o series...">
+        </div>
+        
+        <div id="loading-message" style="display:none;">Procesando...</div>
+        <div id="content"></div>
+        <div id="pagination-container"></div>
+    </div>
+</div>
+
+<script>
+    // --- VARIABLES GLOBALES Y CONSTANTES ---
+    const ITEMS_PER_PAGE = 50;
+    let currentM3UContent = null;
+    let credentials = '';
+    let allCategoriesData = null;
+    let fullContentList = [];
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    let searchDebounceTimeout;
+
+    // --- ELEMENTOS DEL DOM ---
+    const contentDiv = document.getElementById('content');
+    const loadingMessage = document.getElementById('loading-message');
+    const mainView = document.getElementById('main-view');
+    const searchContainer = document.getElementById('search-container');
+    const paginationContainer = document.getElementById('pagination-container');
+    const favoritesNavItem = document.getElementById('favorites-nav-item');
+    const favoritesNavBtn = document.getElementById('favorites-nav-btn');
+    const playerModal = document.getElementById('player-modal');
+    const videoPlayer = document.getElementById('video-player');
+    const playerTitle = document.getElementById('player-title');
+    const playerCloseBtn = document.getElementById('player-close-btn');
+
+    // --- LÓGICA PRINCIPAL AL CARGAR LA PÁGINA ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const m3uUrlToLoad = urlParams.get('url');
+
+        if (m3uUrlToLoad) {
+            loadM3uFromUrl(m3uUrlToLoad);
+        }
+    });
+
+    // --- MANEJO DE EVENTOS ---
+    document.getElementById('m3u_file').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            document.getElementById('file-name').textContent = `Archivo: ${file.name}`;
+            document.getElementById('load-button').style.display = 'inline-block';
+        }
+    });
+
+    document.getElementById('load-button').addEventListener('click', () => {
+        const file = document.getElementById('m3u_file').files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => processM3UContent(e.target.result);
+        reader.readAsText(file);
+    });
+    
+    document.getElementById('search-input').addEventListener('keyup', (event) => {
+        clearTimeout(searchDebounceTimeout);
+        searchDebounceTimeout = setTimeout(() => performSearch(event.target.value), 300);
+    });
+    
+    favoritesNavBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        displayFavorites();
+    });
+
+    playerCloseBtn.addEventListener('click', closePlayer);
+    playerModal.addEventListener('click', (e) => {
+        if (e.target === playerModal) {
+            closePlayer();
+        }
+    });
+
+    // --- FUNCIONES DE CARGA Y PROCESAMIENTO ---
+    function loadM3uFromUrl(url) {
+        mainView.style.display = 'none';
+        loadingMessage.style.display = 'block';
+        fetch(url)
+            .then(response => response.ok ? response.text() : Promise.reject('Error de red'))
+            .then(data => processM3UContent(data))
+            .catch(error => {
+                loadingMessage.style.display = 'none';
+                contentDiv.innerHTML = `<p style="color:red;">Error al cargar desde URL: ${error.message}</p>`;
+            });
+    }
+
+    function processM3UContent(content) {
+        currentM3UContent = content;
+        credentials = (content.match(/(https?:\/\/)([^:\/@]+:[^:\/@]+@)/) || [])[2] || '';
+        mainView.style.display = 'none';
+        loadingMessage.style.display = 'block';
+        contentDiv.innerHTML = '';
+        paginationContainer.innerHTML = '';
+
+        const formData = new FormData();
+        formData.append('m3u_content', currentM3UContent);
+        formData.append('get_all_content', 'true');
+
+        fetch('process_m3u.php', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                loadingMessage.style.display = 'none';
+                if (data.status === 'success') {
+                    allCategoriesData = data.categories;
+                    fullContentList = data.allItems;
+                    favoritesNavItem.style.display = 'block';
+                    displayCategories();
+                } else {
+                    contentDiv.innerHTML = `<p style="color:red;">Error: ${data.message}</p>`;
+                }
+            });
+    }
+
+    // --- FUNCIONES DE BÚSQUEDA ---
+    function performSearch(query) {
+        if (query.length < 3) {
+            if (query.length === 0) displayCategories();
+            return;
+        }
+        const results = fullContentList.filter(item => 
+            item.title.toLowerCase().includes(query.toLowerCase())
+        );
+        renderPaginatedView(results, `Resultados para "${query}"`, true);
+    }
+
+    // --- FUNCIONES DE VISUALIZACIÓN ---
+    function displayCategories() {
+        contentDiv.innerHTML = '';
+        paginationContainer.innerHTML = '';
+        searchContainer.style.display = 'block';
+        document.getElementById('search-input').value = '';
+        const list = document.createElement('ul');
+        list.className = 'item-list';
+
+        if (favorites.length > 0) {
+            const favItem = document.createElement('li');
+            favItem.className = 'list-item';
+            favItem.innerHTML = `<div class="item-info"><div class="item-title category-title">★ Favoritos (${favorites.length})</div></div>`;
+            favItem.addEventListener('click', displayFavorites);
+            list.appendChild(favItem);
+        }
+
+        for (const categoryName in allCategoriesData) {
+            const item = document.createElement('li');
+            item.className = 'list-item';
+            item.innerHTML = `<div class="item-info"><div class="item-title category-title">${categoryName} (${allCategoriesData[categoryName].count})</div></div>`;
+            item.addEventListener('click', () => displayCategoryContent(categoryName));
+            list.appendChild(item);
+        }
+        contentDiv.appendChild(list);
+    }
+
+    function displayFavorites() {
+        const favoriteItems = fullContentList.filter(item => favorites.includes(item.title));
+        renderPaginatedView(favoriteItems, '★ Favoritos', false);
+    }
+
+    function displayCategoryContent(categoryName) {
+        const items = fullContentList.filter(item => item.category === categoryName);
+        renderPaginatedView(items, categoryName, false);
+    }
+    
+    function displayEpisodes(category, seriesName) {
+        loadingMessage.style.display = 'block';
+        contentDiv.innerHTML = '';
+        paginationContainer.innerHTML = '';
+
+        const formData = new FormData();
+        formData.append('m3u_content', currentM3UContent);
+        formData.append('category', category);
+        formData.append('series_name', seriesName);
+
+        fetch('process_m3u.php', { method: 'POST', body: formData })
+        .then(response => response.json())
+        .then(data => {
+            loadingMessage.style.display = 'none';
+            if (data.status === 'success') {
+                contentDiv.innerHTML = `<h2>${seriesName}</h2>`;
+                
+                const backButtonTop = createBackButton(category, 'displayCategoryContent');
+                const topContainer = document.createElement('div');
+                topContainer.className = 'back-button-container top';
+                topContainer.appendChild(backButtonTop);
+                contentDiv.appendChild(topContainer);
+
+                let currentSeason = -1;
+                data.episodes.forEach(episode => {
+                    if (episode.season !== currentSeason) {
+                        currentSeason = episode.season;
+                        const seasonHeader = document.createElement('h3');
+                        seasonHeader.className = 'season-header';
+                        seasonHeader.textContent = `Temporada ${currentSeason}`;
+                        contentDiv.appendChild(seasonHeader);
+                    }
+                    const list = document.createElement('ul');
+                    list.className = 'item-list';
+                    list.appendChild(createContentItem(episode, false, true)); // isEpisode = true
+                    contentDiv.appendChild(list);
+                });
+
+                const backButtonBottom = createBackButton(category, 'displayCategoryContent');
+                const bottomContainer = document.createElement('div');
+                bottomContainer.className = 'back-button-container';
+                bottomContainer.appendChild(backButtonBottom);
+                contentDiv.appendChild(bottomContainer);
+            }
+        });
+    }
+
+    // --- PAGINACIÓN Y RENDERIZADO ---
+    function renderPaginatedView(items, title, isSearchResult) {
+        contentDiv.innerHTML = `<h2>${title} (${items.length})</h2>`;
+        paginationContainer.innerHTML = '';
+
+        const backButtonTop = createBackButton(null, 'displayCategories');
+        const topContainer = document.createElement('div');
+        topContainer.className = 'back-button-container top';
+        topContainer.appendChild(backButtonTop);
+        contentDiv.appendChild(topContainer);
+        
+        let currentPage = 1;
+
+        function renderPage() {
+            const list = contentDiv.querySelector('.item-list') || document.createElement('ul');
+            if (!list.classList.contains('item-list')) list.className = 'item-list';
+            
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            items.slice(start, end).forEach(item => list.appendChild(createContentItem(item, isSearchResult)));
+            
+            if (!contentDiv.querySelector('.item-list')) contentDiv.appendChild(list);
+
+            paginationContainer.innerHTML = '';
+            if (end < items.length) {
+                const loadMoreButton = document.createElement('button');
+                loadMoreButton.textContent = `Cargar más (${items.length - end} restantes)`;
+                loadMoreButton.className = 'button button-secondary';
+                loadMoreButton.addEventListener('click', () => { currentPage++; renderPage(); });
+                paginationContainer.appendChild(loadMoreButton);
+            }
+        }
+        renderPage();
+        
+        const backButtonBottom = createBackButton(null, 'displayCategories');
+        const bottomContainer = document.createElement('div');
+        bottomContainer.className = 'back-button-container';
+        bottomContainer.appendChild(backButtonBottom);
+        paginationContainer.appendChild(bottomContainer);
+    }
+
+    // --- FUNCIONES AUXILIARES Y DE REPRODUCTOR ---
+    function createBackButton(context, action) {
+        const button = document.createElement('button');
+        button.className = 'button button-secondary';
+        if (action === 'displayCategories') {
+            button.textContent = '‹ Volver a Categorías';
+            button.addEventListener('click', displayCategories);
+        } else {
+            button.textContent = `‹ Volver a ${context}`;
+            button.addEventListener('click', () => displayCategoryContent(context));
+        }
+        return button;
+    }
+
+    function createContentItem(item, isSearchResult = false, isEpisode = false) {
+        const listItem = document.createElement('li');
+        listItem.className = 'list-item';
+        
+        const isFav = favorites.includes(item.title);
+        
+        let itemInfoHTML = `<div class="item-info">
+            <div class="item-title">${item.title}</div>
+            ${isSearchResult ? `<div class="item-category">Categoría: ${item.category}</div>` : ''}
+        </div>`;
+
+        let actionsHTML = '<div class="item-actions">';
+        if (!isEpisode) {
+            const starChar = isFav ? '★' : '☆';
+            actionsHTML += `<button class="favorite-btn ${isFav ? 'is-favorite' : ''}" title="Añadir a favoritos">${starChar}</button>`;
+        }
+
+        if (item.type === 'series') {
+            actionsHTML += `<a href="#" class="action-link series-link">Ver Episodios</a>`;
+        } else {
+            actionsHTML += `<a href="#" class="action-link play-link">Reproducir</a>`;
+            actionsHTML += `<a href="descargar.php?url=${encodeURIComponent(item.url)}&nombre=${encodeURIComponent(item.title)}" class="action-link download-link">Descargar</a>`;
+            actionsHTML += `<a href="#" class="action-link jdownloader-link" title="Enviar a JDownloader">Enviar a JD</a>`;
+        }
+        actionsHTML += '</div>';
+
+        listItem.innerHTML = itemInfoHTML + actionsHTML;
+
+        // Event Listeners
+        if (!isEpisode) {
+            listItem.querySelector('.favorite-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(item.title, e.currentTarget);
+            });
+        }
+        if (item.type === 'series') {
+            listItem.querySelector('.series-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                displayEpisodes(item.category, item.title);
+            });
+        } else {
+            const playButton = listItem.querySelector('.play-link');
+            if(playButton) {
+                playButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    playVideo(item.url, item.title);
+                });
+            }
+        }
+        
+        const jdButton = listItem.querySelector('.jdownloader-link');
+        if (jdButton) {
+            jdButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                sendToJDownloader(item.url, item.title);
+            });
+        }
+        
+        return listItem;
+    }
+
+    function sendToJDownloader(url, title) {
+        // Construimos una URL que apunta a NUESTRO script descargar.php
+        const proxyUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}descargar.php?url=${encodeURIComponent(url)}&nombre=${encodeURIComponent(title)}`;
+
+        // Creamos el formulario para el Click'n'Load tradicional
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'http://127.0.0.1:9666/flash/add';
+        form.target = 'jd_iframe'; // Usamos el iframe para no recargar la página
+
+        // Creamos el input con nuestra URL de proxy
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'urls';
+        input.value = proxyUrl;
+        
+        // Enviamos el formulario
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+        console.log(`Enviando URL de proxy a JDownloader para: ${title}`);
+    }
+
+    function toggleFavorite(title, button) {
+        const index = favorites.indexOf(title);
+        if (index > -1) {
+            favorites.splice(index, 1);
+            button.classList.remove('is-favorite');
+            button.innerHTML = '☆';
+        } else {
+            favorites.push(title);
+            button.classList.add('is-favorite');
+            button.innerHTML = '★';
+        }
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function playVideo(url, title) {
+        playerTitle.textContent = title;
+        videoPlayer.src = url;
+        playerModal.style.display = 'flex';
+        videoPlayer.play();
+    }
+
+    function closePlayer() {
+        playerModal.style.display = 'none';
+        videoPlayer.pause();
+        videoPlayer.src = '';
+    }
+
+</script>
+
+<script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    const applyTheme = (theme) => { body.classList.toggle('dark-mode', theme === 'dark'); };
+    themeToggle.addEventListener('click', () => {
+        const newTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        applyTheme(savedTheme);
+    });
+</script>
+
+<iframe name="jd_iframe" style="display:none;"></iframe>
+
+</body>
+</html>

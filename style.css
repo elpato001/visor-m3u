@@ -1,0 +1,324 @@
+/* style.css */
+
+/* --- 1. Definición de Variables y Estilos Globales --- */
+:root {
+    /* Paleta de colores - MODO CLARO (Default) */
+    --color-bg: #f0f2f5;
+    --color-surface: #ffffff;
+    --color-primary: #007bff;
+    --color-primary-hover: #0056b3;
+    --color-secondary: #6c757d;
+    --color-secondary-hover: #5a6268;
+    --color-success: #28a745;
+    --color-success-hover: #218838;
+    --color-warning: #e67e22;
+    --color-warning-hover: #d35400;
+    --color-text-primary: #212529;
+    --color-text-secondary: #6c757d;
+    --color-border: #dee2e6;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* Tipografía y Bordes */
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --border-radius: 8px;
+}
+
+/* Paleta de colores - MODO OSCURO */
+body.dark-mode {
+    --color-bg: #121212;
+    --color-surface: #1e1e1e;
+    --color-primary: #3a96ff;
+    --color-primary-hover: #5ca6ff;
+    --color-secondary: #8c96a0;
+    --color-secondary-hover: #a5aeb7;
+    --color-text-primary: #e4e6eb;
+    --color-text-secondary: #b0b3b8;
+    --color-border: #444;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- 2. Estructura Principal --- */
+.container {
+    background-color: var(--color-surface);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    border: 1px solid var(--color-border);
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+h1, h2, h3 { color: var(--color-text-primary); }
+p, label { color: var(--color-text-secondary); }
+
+/* --- 3. Menú de Navegación --- */
+nav {
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+nav ul { list-style-type: none; margin: 0; padding: 0; display: flex; gap: 15px; }
+nav ul li a {
+    text-decoration: none;
+    color: var(--color-primary);
+    font-weight: bold;
+    font-size: 16px;
+    padding: 8px 15px;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+nav ul li a:hover, nav ul li a.active {
+    background-color: var(--color-bg);
+    color: var(--color-primary-hover);
+}
+
+/* Botón de Modo Oscuro */
+#theme-toggle {
+    position: absolute;
+    right: 0;
+    top: -5px;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--color-text-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s, color 0.3s;
+}
+#theme-toggle:hover { background-color: var(--color-bg); }
+.icon-sun { display: none; }
+.icon-moon { display: block; }
+body.dark-mode .icon-sun { display: block; }
+body.dark-mode .icon-moon { display: none; }
+
+
+/* --- 4. Formularios y Botones --- */
+.form-container { margin-bottom: 30px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; }
+label { display: block; text-align: left; margin-bottom: 0.5em; }
+input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 0.8em;
+    margin-bottom: 1em;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Estilos de Botones Genéricos */
+.button {
+    display: inline-block;
+    width: auto;
+    box-sizing: border-box;
+    text-decoration: none;
+    text-align: center;
+    padding: 0.8em 1.2em;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+.full-width { width: 100%; }
+
+.button-primary { background-color: var(--color-primary); }
+.button-primary:hover { background-color: var(--color-primary-hover); }
+
+.button-secondary { background-color: var(--color-secondary); color: white; }
+.button-secondary:hover { background-color: var(--color-secondary-hover); }
+
+.button-success { background-color: var(--color-success); }
+.button-success:hover { background-color: var(--color-success-hover); }
+
+.button-warning { background-color: var(--color-warning); }
+.button-warning:hover { background-color: var(--color-warning-hover); }
+
+.back-button-container {
+    margin-top: 20px;
+}
+
+.back-button-container.top {
+    margin-bottom: 15px;
+    margin-top: 0;
+    text-align: left;
+}
+
+
+/* --- 5. Listas y Resultados --- */
+#file-name { margin-left: 10px; font-weight: bold; color: var(--color-text-secondary); }
+#loading-message { display: none; color: var(--color-text-secondary); margin-top: 20px; font-style: italic; }
+#content { text-align: left; }
+.item-list { list-style-type: none; padding: 0; margin-top: 10px; }
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.2s;
+    gap: 10px;
+}
+.list-item:hover { background-color: var(--color-bg); }
+.list-item:last-child { border-bottom: none; }
+
+.item-info { flex-grow: 1; }
+.item-info .item-title { font-weight: bold; color: var(--color-text-primary); }
+.item-info .item-category { font-size: 0.9em; color: var(--color-text-secondary); margin-top: 4px; }
+.category-title { cursor: pointer; }
+.item-actions { display: flex; align-items: center; gap: 10px; }
+
+.action-link {
+    color: white;
+    padding: 8px 15px;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-size: 0.9em;
+    white-space: nowrap;
+    transition: background-color 0.3s;
+}
+.download-link { background-color: var(--color-success); }
+.download-link:hover { background-color: var(--color-success-hover); }
+.series-link { background-color: var(--color-warning); }
+.series-link:hover { background-color: var(--color-warning-hover); }
+
+.season-header { font-size: 1.2em; color: var(--color-text-primary); background-color: var(--color-bg); padding: 10px; margin-top: 20px; border-radius: var(--border-radius); }
+.resultado { background-color: var(--color-bg); padding: 1em; border-radius: var(--border-radius); margin-top: 1.5em; text-align: center; }
+.resultado h3 { margin-top: 0; color: var(--color-success); }
+.resultado .button-group { display: flex; gap: 10px; margin-top: 1em; }
+
+/* --- 6. NUEVOS ESTILOS --- */
+
+/* Botón de Favorito */
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    padding: 0 5px;
+    transition: color 0.2s, transform 0.2s;
+}
+.favorite-btn:hover { transform: scale(1.2); }
+.favorite-btn.is-favorite { color: #ffc107; } /* Amarillo estrella */
+
+/* Modal para recargar lista */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    background-color: var(--color-surface);
+    padding: 2em;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+.modal-buttons {
+    margin-top: 1.5em;
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+}
+#pagination-container { text-align: center; margin-top: 20px; }
+
+/* Pega esto al final de tu archivo style.css */
+
+/* --- 7. NUEVOS ESTILOS PARA EL REPRODUCTOR DE VIDEO --- */
+
+/* Botón de Reproducir */
+.play-link { background-color: var(--color-primary); }
+.play-link:hover { background-color: var(--color-primary-hover); }
+
+/* Modal del reproductor */
+.player-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: none; /* Se activa con JS */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.player-modal-content {
+    background-color: #000;
+    padding: 20px;
+    padding-bottom: 10px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    width: 90%;
+    max-width: 960px;
+    position: relative;
+}
+.player-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.player-modal-header h3 {
+    margin: 0;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#player-close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
+}
+#video-player {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    background-color: #000;
+}
+
+/* Estilo para el nuevo botón de JDownloader */
+.jdownloader-link { background-color: #7B1FA2; } /* Un color morado */
+.jdownloader-link:hover { background-color: #6A1B9A; }
